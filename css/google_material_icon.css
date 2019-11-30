@@ -1,0 +1,30 @@
+/* https://nelog.jp/how-to-use-google-material-icons で紹介されている設定を少し修正 */
+
+/* Material iconsを利用する */
+.material-icons {
+  font-family: 'Material Icons';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 95% !important;
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  line-height: 1.175 !important;
+  text-transform: none;
+
+  margin-right: 5px;
+  margin-left: -2px;
+
+  opacity: 0.5;
+ 
+  /* WebKitブラウザサポート */
+  -webkit-font-smoothing: antialiased;
+  /* Chrome、Safariサポート */
+  text-rendering: optimizeLegibility;
+ 
+  /* Firefoxサポート */
+  -moz-osx-font-smoothing: grayscale;
+ 
+  /* IEサポート */
+  font-feature-settings: 'liga';
+}
