@@ -1,0 +1,23 @@
+{
+  "name": "categorize-channel",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yamy1114ky/channel-categorizer.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/yamy1114ky/channel-categorizer/issues"
+  },
+  "homepage": "https://github.com/yamy1114ky/channel-categorizer#readme",
+  "dependencies": {
+    "crx-hotreload": "^1.0.4",
+    "jquery": "^3.4.1"
+  }
+}
