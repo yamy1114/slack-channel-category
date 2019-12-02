@@ -13,7 +13,8 @@
         "./js/content.js"
       ],
       "css": [
-        "./css/google_material_icon.css"
+        "./css/google_material_icon.css",
+        "./css/content.css"
       ]
     }
   ],

@@ -1,0 +1,12 @@
+.category {
+  background-color: rgba(255, 255, 255, 0.00);
+  box-shadow: 0px 1.5px rgba(0, 0, 0, 0.25); 
+}
+
+.category_channels {
+  background-color: rgba(0, 0, 0, 0.25);
+}
+
+.top_light_item {
+  box-shadow: 0px 1px rgba(255, 255, 255, 0.1) inset
+}

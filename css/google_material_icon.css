@@ -5,15 +5,15 @@
   font-family: 'Material Icons';
   font-weight: normal;
   font-style: normal;
-  font-size: 95% !important;
+  font-size: 100% !important;
   display: inline-block;
   width: 1em;
   height: 1em;
-  line-height: 1.175 !important;
+  line-height: 1.1 !important;
   text-transform: none;
 
   margin-right: 5px;
-  margin-left: -2px;
+  margin-left: -3px;
 
   opacity: 0.5;
  
