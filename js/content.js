@@ -60,6 +60,15 @@ function change_channel_order(channel_elements_div) {
   })
 }
 
+function register_storage() {
+  categories = ['lab3ec', 'yamy'] 
+  chrome.storage.sync.set({categories: categories})
+  chrome.storage.sync.get(['categories'], function(item){
+    logger.debug(item.categories[0])
+    logger.debug(item.categories[1])
+  })
+}
+
 // category section を追加する
 function add_category_section(channel_elements_div) {
   starred = null
@@ -69,14 +78,10 @@ function add_category_section(channel_elements_div) {
       return
     }
     section_name = section_name_spans[0].textContent
-    logger.debug(section_name)
     if (section_name == ' Starred') {
       starred = div
-      logger.debug('find starred')
     }
   })
-
-  logger.debug(starred)
 
   section_heading = document.createElement('div')
   section_heading.classList.add('p-channel_sidebar__section_heading')
@@ -100,36 +105,40 @@ function add_category_section(channel_elements_div) {
 
 // category を追加する
 function add_category(channel_elements_div) {
-  category_name = 'lab3ec'
+  chrome.storage.sync.get(['categories'], function(item){
+    categories = item.categories
+  })
 
-  // google material icon 使うために header に link 仕込む
-  icon_font_link = document.createElement('link')
-  icon_font_link.setAttribute('href', 'https://fonts.googleapis.com/icon?family=Material+Icons')
-  icon_font_link.setAttribute('rel', 'stylesheet')
-  document.head.appendChild(icon_font_link)
-
-  category_name_span = document.createElement('span')
-  category_name_span.textContent = category_name
-  category_name_span.classList.add('p-channel_sidebar__name')
-
-  category_icon_i = document.createElement('i')
-  category_icon_i.classList.add('material-icons')
-  category_icon_i.textContent = 'category'
-
-  category_div = document.createElement('div')
-  // これつけたら他と合わせていい感じの位置に表示してくれる
-  category_div.classList.add('p-channel_sidebar__link')
-  category_div.classList.add('category')
-  category_div.appendChild(category_icon_i)
-  category_div.appendChild(category_name_span)
-
-  listitem_div = document.createElement('div')
-  listitem_div.setAttribute('role', 'listitem')
-  listitem_div.appendChild(category_div)
-
-  parent_channel = document.getElementsByClassName('categories')[0]
-
-  channel_elements_div.insertBefore(listitem_div, parent_channel.nextSibling)
+  categories.forEach(category_name => {
+    // google material icon 使うために header に link 仕込む
+    icon_font_link = document.createElement('link')
+    icon_font_link.setAttribute('href', 'https://fonts.googleapis.com/icon?family=Material+Icons')
+    icon_font_link.setAttribute('rel', 'stylesheet')
+    document.head.appendChild(icon_font_link)
+  
+    category_name_span = document.createElement('span')
+    category_name_span.textContent = category_name
+    category_name_span.classList.add('p-channel_sidebar__name')
+  
+    category_icon_i = document.createElement('i')
+    category_icon_i.classList.add('material-icons')
+    category_icon_i.textContent = 'category'
+  
+    category_div = document.createElement('div')
+    // これつけたら他と合わせていい感じの位置に表示してくれる
+    category_div.classList.add('p-channel_sidebar__link')
+    category_div.classList.add('category')
+    category_div.appendChild(category_icon_i)
+    category_div.appendChild(category_name_span)
+  
+    listitem_div = document.createElement('div')
+    listitem_div.setAttribute('role', 'listitem')
+    listitem_div.appendChild(category_div)
+  
+    parent_channel = document.getElementsByClassName('categories')[0]
+  
+    channel_elements_div.insertBefore(listitem_div, parent_channel.nextSibling)
+  })
 }
 
 // category 配下に channel を追加
@@ -151,7 +160,7 @@ function add_channel_to_category(channel_elements_div) {
     }
   })
 
-  category.nextSibling.classList.add('top_light_item')
+  category.nextSibling.classList.add('light_reflection')
 
   let category_channels_div = document.createElement('div')
   category_channels_div.classList.add('category_channels')

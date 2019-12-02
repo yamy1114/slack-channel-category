@@ -3,6 +3,9 @@
   "version": "1.0",
   "description": "enable to categorize your slack channels",
   "manifest_version": 2,
+  "permissions": [
+    "storage"
+  ],
   "content_scripts": [
     {
       "matches": [
