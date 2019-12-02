@@ -61,7 +61,16 @@ function change_channel_order(channel_elements_div) {
 }
 
 function register_storage() {
-  categories = ['lab3ec', 'yamy'] 
+  categories = [
+    {
+      name: 'lab3ec',
+      channels: ['bear-jp-lab3ec-ope', 'region-lab3ec-jp']
+    },
+    {
+      name: 'yamy-hoge',
+      channels: ['h29']
+    }
+  ] 
   chrome.storage.sync.set({categories: categories})
   chrome.storage.sync.get(['categories'], function(item){
     logger.debug(item.categories[0])
@@ -109,7 +118,9 @@ function add_category(channel_elements_div) {
     categories = item.categories
   })
 
-  categories.forEach(category_name => {
+  categories.forEach(category => {
+    category_name = category.name  
+
     // google material icon 使うために header に link 仕込む
     icon_font_link = document.createElement('link')
     icon_font_link.setAttribute('href', 'https://fonts.googleapis.com/icon?family=Material+Icons')
@@ -133,6 +144,7 @@ function add_category(channel_elements_div) {
   
     listitem_div = document.createElement('div')
     listitem_div.setAttribute('role', 'listitem')
+    listitem_div.setAttribute('id', 'listitem_category_' + category_name)
     listitem_div.appendChild(category_div)
   
     parent_channel = document.getElementsByClassName('categories')[0]
@@ -143,37 +155,51 @@ function add_category(channel_elements_div) {
 
 // category 配下に channel を追加
 function add_channel_to_category(channel_elements_div) {
-  let child_channel_name_regex = /lab3ec/
-  let category_name = 'lab3ec'
-
-  let child_channels = []
-  let category = null
-  Array.from(channel_elements_div.children).forEach(div => {
-    name_spans = div.getElementsByClassName('p-channel_sidebar__name')
-    if (name_spans.length == 1) {
-      name = name_spans[0].textContent
-      if (name == category_name) {
-        category = div
-      } else if (name.match(child_channel_name_regex)) {
-        child_channels.push(div)
-      }
-    }
+  chrome.storage.sync.get(['categories'], function(item){
+    categories = item.categories
   })
 
-  category.nextSibling.classList.add('light_reflection')
+  // ここはリファクタリング時に category の作成と同時に channel 追加をしても良いかも
+  categories.forEach(category_data => {
+    let child_channel_names = category_data.channels
+    let category_name = category_data.name
+  
+    let child_channels = []
+    let category = null
+    Array.from(channel_elements_div.children).forEach(div => {
+      name_spans = div.getElementsByClassName('p-channel_sidebar__name')
+      if (name_spans.length == 1) {
+        name = name_spans[0].textContent
+        if (name == category_name) {
+          category = div
+        } else if (child_channel_names.includes(name)) {
+          child_channels.push(div)
+        }
+      }
+    })
+  
+ 
+    let category_channels_div = document.createElement('div')
+    category_channels_div.classList.add('category_channels')
+    let sidebar = document.getElementsByClassName('p-channel_sidebar')[0]
+    category.appendChild(category_channels_div)
 
-  let category_channels_div = document.createElement('div')
-  category_channels_div.classList.add('category_channels')
-  let sidebar = document.getElementsByClassName('p-channel_sidebar')[0]
-  category.appendChild(category_channels_div)
+    shadow_step = document.createElement('div')
+    shadow_step.classList.add('shadow_step')
+    category_channels_div.appendChild(shadow_step)
+   
+    child_channels.forEach(category_channel => {
+      category_channels_div.appendChild(category_channel)
+  //    category_channel.children[0].style.paddingLeft = '250px'
+      // onclick だと遅い、slack の処理との優先順位が前後する可能性があるため、押下の瞬間を取られる
+      category_channel.onmousedown = function(){
+        category_channel_clicked(category_channel)
+      }
+    })
 
-  child_channels.forEach(category_channel => {
-    category_channels_div.appendChild(category_channel)
-//    category_channel.children[0].style.paddingLeft = '250px'
-    // onclick だと遅い、slack の処理との優先順位が前後する可能性があるため、押下の瞬間を取られる
-    category_channel.onmousedown = function(){
-      category_channel_clicked(category_channel)
-    }
+    light_reflection = document.createElement('div')
+    light_reflection.classList.add('light_reflection')
+    category_channels_div.appendChild(light_reflection)
   })
 }
 
