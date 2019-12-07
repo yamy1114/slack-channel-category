@@ -1,10 +1,10 @@
 .category_channels {
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: rgba(0, 0, 0, 0.3);
 }
 
 .step_shadow {
   height: 2px;
-  background-color: rgba(0, 0, 0, 0.1);
+  background-color: rgba(0, 0, 0, 0.2);
 }
 
 .light_reflection {
@@ -20,5 +20,10 @@
 .category_edit_button {
   cursor: pointer;
   margin-right: 5px;
+}
+
+.category_rename_button {
+  cursor: pointer;
+  margin-right: 7.5px;
   margin-left: 2px;
 }

@@ -16,15 +16,15 @@
   margin-left: -3px;
 
   opacity: 0.5;
- 
+
   /* WebKitブラウザサポート */
   -webkit-font-smoothing: antialiased;
   /* Chrome、Safariサポート */
   text-rendering: optimizeLegibility;
- 
+
   /* Firefoxサポート */
   -moz-osx-font-smoothing: grayscale;
- 
+
   /* IEサポート */
   font-feature-settings: 'liga';
 }
