@@ -19,10 +19,6 @@
       ],
       "js": [
         "./dist/bundle.js"
-      ],
-      "css": [
-        "./css/google_material_icon.css",
-        "./css/content.css"
       ]
     }
   ],

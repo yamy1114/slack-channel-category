@@ -2,6 +2,9 @@ import Logger from './logger'
 import Storage from './storage'
 import SidebarController from './sidebar_controller'
 
+import '../css/app.css'
+import '../css/google_material_icon.css'
+
 const main = () => {
   const monitor = new MutationObserver(start_process)
   const monitoring_target = document.getElementsByClassName('p-client_container')[0]

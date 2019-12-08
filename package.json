@@ -22,6 +22,8 @@
     "@types/chrome": "0.0.91",
     "babel-loader": "^8.0.6",
     "crx-hotreload": "^1.0.4",
+    "css-loader": "^3.2.1",
+    "style-loader": "^1.0.1",
     "ts-loader": "^6.2.1",
     "typescript": "^3.7.3",
     "webpack": "^4.41.2",
