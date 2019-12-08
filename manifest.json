@@ -5,9 +5,9 @@
   "description": "enable to categorize your slack channels",
   "homepage_url": "https://github.com/yamy1114ky/slack-channel-categorize",
   "icons": {
-    "16": "./img/icon16.png",
-    "48": "./img/icon48.png",
-    "128": "./img/icon128.png"
+    "16": "./icon/icon16.png",
+    "48": "./icon/icon48.png",
+    "128": "./icon/icon128.png"
   },
   "permissions": [
     "storage"
@@ -18,7 +18,7 @@
         "https://app.slack.com/*"
       ],
       "js": [
-        "./js/content.js"
+        "./dist/bundle.js"
       ],
       "css": [
         "./css/google_material_icon.css",

@@ -17,7 +17,13 @@
   },
   "homepage": "https://github.com/yamy1114ky/channel-categorizer#readme",
   "dependencies": {
+    "@babel/core": "^7.7.5",
+    "@babel/preset-env": "^7.7.5",
+    "@types/chrome": "0.0.91",
+    "babel-loader": "^8.0.6",
     "crx-hotreload": "^1.0.4",
+    "ts-loader": "^6.2.1",
+    "typescript": "^3.7.3",
     "webpack": "^4.41.2",
     "webpack-cli": "^3.3.10"
   }
