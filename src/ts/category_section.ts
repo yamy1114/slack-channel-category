@@ -2,12 +2,17 @@ import Logger from './logger'
 import * as Constant from './constant'
 
 export default class CategorySection {
+  private element
   private root_element
   private add_category_button
 
   constructor(root_element) {
     this.root_element = root_element
     this.setup()
+  }
+
+  public getElement() {
+    return this.element
   }
 
   public getAddCategoryButton() {
@@ -42,6 +47,7 @@ export default class CategorySection {
     const element = document.createElement('div')
     element.classList.add('category_section', Constant.CATEGORY_COMPONENT_CLASS)
     element.appendChild(this.createSectionHeading())
+    this.element = element
     return element
   }
 
