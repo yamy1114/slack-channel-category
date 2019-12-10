@@ -8,13 +8,13 @@ import '../css/google_material_icon.css'
 const main = () => {
   insertMaterialIconsLink()
   const monitor = new MutationObserver(startProcess)
-  const monitoring_target = document.getElementsByClassName('p-client_container')[0]
-  monitor.observe(monitoring_target, { childList: true })
+  const monitoringTarget = document.getElementsByClassName('p-client_container')[0]
+  monitor.observe(monitoringTarget, { childList: true })
 }
 
 const startProcess = () => {
-  const workspace_name = fetchWorkspaceName()
-  const storage = new Storage(workspace_name)
+  const workspaceName = fetchWorkspaceName()
+  const storage = new Storage(workspaceName)
   new SidebarController(storage)
 }
 

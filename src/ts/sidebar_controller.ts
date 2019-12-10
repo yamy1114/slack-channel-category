@@ -5,108 +5,178 @@ import * as Constant from './constant'
 
 export default class SidebarController {
   private storage
-  private root_element
-  private category_section
+  private rootElement
+  private categorySection
   private categories
+  // Array<String, Element>
+  private channels
+  private originalSiderbarChildren
 
   constructor(storage) {
     this.storage = storage
-    this.root_element = this.fetch_root_element()
+    this.rootElement = this.fetchRootElement()
+    this.originalSiderbarChildren = Array.from(this.rootElement.children)
+    this.channels = this.composeChannels()
     this.initialize()
   }
 
   private initialize() {
-    this.category_section = new CategorySection(this.root_element)
-    this.registerAddCategoryButtonEvent(this.category_section.getAddCategoryButton())
+    this.categorySection = new CategorySection(this.rootElement)
+    this.registerAddCategoryButtonEvent(this.categorySection.getAddCategoryButton())
     this.createCategories()
   }
 
-  private fetch_root_element() {
+  private fetchRootElement() {
     return document.getElementsByClassName('p-channel_sidebar__static_list')[0]
+  }
+
+  private composeChannels() {
+    const channels = []
+    Array.from(this.rootElement.children).forEach((element: Element) => {
+      if (element.getElementsByClassName('p-channel_sidebar__channel')[0] == null) {
+        return
+      }
+      const channelName = element.getElementsByClassName('p-channel_sidebar__name')[0].textContent
+      channels.push({
+        name: channelName,
+        element: element
+      })
+    })
+    return channels
   }
 
   private createCategories() {
     this.categories = {}
-    this.storage.load((categories_data) => {
-      const sorted_category_names = Object.keys(categories_data).sort()
-      for(const category_name of sorted_category_names) {
-        const category = new Category(this.root_element, category_name, categories_data[category_name], this.category_section)
-        this.registerRenameCategoryButtonEvent(category.getRenameCategoryButton(), category_name)
-        this.registerEditCategoryButtonEvent(category.getEditCategoryButton(), category_name)
-        this.registerDeleteCategoryButtonEvent(category.getDeleteCategoryButton(), category_name)
-        this.categories[category_name] = category
+    this.storage.load((categoriesData) => {
+      const sortedCategoryNames = Object.keys(categoriesData).sort()
+      for(const categoryName of sortedCategoryNames) {
+        const channels = this.channels.filter((channel) => {
+         for(const channelName of categoriesData[categoryName]) {
+           const channelRegex = new RegExp('^' + channelName.replace(/[\\^$.+?()[\]{}|]/g, '\\$&').replace(/\*/g, '.*') + '$')
+            if (channel.name.match(channelRegex)) {
+              return true
+            }
+          }
+          return false
+        })
+        const category = new Category(this.rootElement, categoryName, channels, this.categorySection)
+        this.registerRenameCategoryButtonEvent(category.getRenameCategoryButton(), categoryName)
+        this.registerEditCategoryButtonEvent(category.getEditCategoryButton(), categoryName)
+        this.registerDeleteCategoryButtonEvent(category.getDeleteCategoryButton(), categoryName)
+        this.categories[categoryName] = category
       }
     })
   }
 
   private registerAddCategoryButtonEvent(button) {
     button.onclick = () => {
-      const new_category_name = window.prompt('Input new category name.', '')
-      if (new_category_name == null) {
+      const newCategoryName = window.prompt(
+        "Input new category name.\n\n" +
+        "Category name should be composed by more than 1 following characters.\n" +
+        "Available characters: [a-z][A-Z][0-9]_- ,./",
+        '')
+      if (newCategoryName == null) {
         return
       }
-      if (new_category_name == '' || !new_category_name.match(/^[\w\-\ \/,\.]*$/)) {
-        window.alert(`Category name should be composed by more than 1 following characters.
-          Available characters: [a-z][A-Z][0-9]_- ,./`)
+      if (newCategoryName == '' || !newCategoryName.match(/^[\w\-\ \/,\.]*$/)) {
+        window.alert('Category name validation error!')
         return
       }
-      this.storage.load((categories_data) => {
-        if (categories_data[new_category_name] == undefined) {
-          categories_data[new_category_name] = []
-          this.storage.save(categories_data)
-          this.recompose_sidebar(categories_data)
+      this.storage.load((categoriesData) => {
+        if (categoriesData[newCategoryName] == undefined) {
+          categoriesData[newCategoryName] = []
+          this.storage.save(categoriesData)
+          this.recomposeSidebar(categoriesData)
         } else {
-          window.alert('Such category name is already used.')
+          window.alert("'" + newCategoryName  + "' is already used!")
         }
       })
     }
   }
 
-  private registerRenameCategoryButtonEvent(button, old_category_name) {
+  private registerRenameCategoryButtonEvent(button, oldCategoryName) {
     button.onclick = () => {
-      const new_category_name = window.prompt('Input new category name.', old_category_name)
-      if (new_category_name == null) {
+      const newCategoryName = window.prompt(
+        "Input new category name.\n\n" +
+        "Category name should be composed by more than 1 following characters.\n" +
+        "Available characters: [a-z][A-Z][0-9]_- ,./", oldCategoryName)
+      if (newCategoryName == null) {
         return
       }
-      if (new_category_name == '' || !new_category_name.match(/^[\w\-\ \/,\.]*$/)) {
-        window.alert(`Category name should be composed by more than 1 following characters
-          [a-z][A-Z][0-9]_- ,./`)
+      if (newCategoryName == '' || !newCategoryName.match(/^[\w\-\ \/,\.]*$/)) {
+        window.alert("Category name validation error!")
         return
       }
-      this.storage.load((categories_data) => {
-        if (categories_data[new_category_name] == undefined) {
-          categories_data[new_category_name] = categories_data[old_category_name]
-          delete categories_data[old_category_name]
-          this.storage.save(categories_data)
-          this.recompose_sidebar(categories_data)
+      this.storage.load((categoriesData) => {
+        if (categoriesData[newCategoryName] == undefined) {
+          categoriesData[newCategoryName] = categoriesData[oldCategoryName]
+          delete categoriesData[oldCategoryName]
+          this.storage.save(categoriesData)
+          this.recomposeSidebar(categoriesData)
         } else {
-          window.alert('Such category name is already used.')
+          window.alert("'" + newCategoryName + "' is already used!")
         }
       })
     }
   }
 
-  private registerEditCategoryButtonEvent(button, category_name) {
-
-  }
-
-  private registerDeleteCategoryButtonEvent(button, category_name) {
+  private registerEditCategoryButtonEvent(button, categoryName) {
     button.onclick = () => {
-      if (!window.confirm('Do you delete category "' + category_name + '"')) {
-        return
-      }
-      this.storage.load((categories_data) => {
-        delete categories_data[category_name]
-        this.storage.save(categories_data)
-        this.recompose_sidebar(categories_data)
+      this.storage.load((categoriesData) => {
+        const currentChannels = categoriesData[categoryName]
+        const newChannelNamesText = window.prompt(
+          "Input channel names separated by '&'.\n" +
+          "You can use '*' as wildcard.",
+          currentChannels.join('&'),
+        )
+        if (newChannelNamesText == null) {
+          return
+        }
+        let newChannelNames = newChannelNamesText.split('&')
+        if (newChannelNames.filter(channelName => channelName.match(/^[\w\-\ ,\.\*]*$/)).length != newChannelNames.length) {
+          window.alert('Parsing channel names is failed!')
+        }
+        // delete duplicate channel name in newChannelNames
+        newChannelNames = newChannelNames.filter((channelName, index, self) => {
+          return self.indexOf(channelName) == index
+        })
+        // delete duplicate channel name in other categories
+        newChannelNames.forEach((channelName: String) => {
+          for(const categoryName in categoriesData) {
+            const channels = categoriesData[categoryName]
+            const index = channels.indexOf(channelName)
+            if (index != -1) {
+              categoriesData[categoryName] = channels.splice(index, 1)
+            }
+          }
+        })
+        categoriesData[categoryName] = newChannelNames
+        this.storage.save(categoriesData)
+        this.recomposeSidebar(categoriesData)
       })
     }
   }
 
-  private recompose_sidebar(categories_data) {
-    const category_components = document.getElementsByClassName(Constant.CATEGORY_COMPONENT_CLASS)
-    Array.from(category_components).forEach(category_component => {
-      this.root_element.removeChild(category_component)
+  private registerDeleteCategoryButtonEvent(button, categoryName) {
+    button.onclick = () => {
+      if (!window.confirm('Do you delete category "' + categoryName + '"?')) {
+        return
+      }
+      this.storage.load((categoriesData) => {
+        delete categoriesData[categoryName]
+        this.storage.save(categoriesData)
+        this.recomposeSidebar(categoriesData)
+      })
+    }
+  }
+
+  private recomposeSidebar(categoriesData) {
+    const categoryComponents = document.getElementsByClassName(Constant.CATEGORY_COMPONENT_CLASS)
+    Array.from(categoryComponents).forEach(categoryComponent => {
+      this.rootElement.removeChild(categoryComponent)
+    })
+    this.originalSiderbarChildren.forEach((element) => {
+      this.rootElement.appendChild(element)
     })
     this.initialize()
   }

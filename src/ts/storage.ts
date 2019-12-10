@@ -22,9 +22,9 @@ export default class Storage {
     Logger.debug('save data to storage')
     Logger.debug(data)
 
-    const save_data = {}
-    save_data[this.STORAGE_KEY] = data
-    chrome.storage.sync.set(save_data)
+    const saveData = {}
+    saveData[this.STORAGE_KEY] = data
+    chrome.storage.sync.set(saveData)
   }
 
   private initialize() {

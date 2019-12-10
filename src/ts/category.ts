@@ -3,19 +3,19 @@ import * as Constant from './constant'
 
 export default class Category {
   private element
-  private root_element
-  private category_section
-  private category_name
+  private rootElement
+  private categorySection
+  private categoryName
   private channels
-  private rename_category_button
-  private edit_category_button
-  private delete_category_button
+  private renameCategoryButton
+  private editCategoryButton
+  private deleteCategoryButton
 
-  constructor(root_element, category_name, channels, category_section) {
-    this.root_element = root_element
-    this.category_name = category_name
+  constructor(rootElement, categoryName, channels, categorySection) {
+    this.rootElement = rootElement
+    this.categoryName = categoryName
     this.channels = channels
-    this.category_section = category_section
+    this.categorySection = categorySection
     this.setup()
   }
 
@@ -24,22 +24,31 @@ export default class Category {
   }
 
   public getRenameCategoryButton() {
-    return this.rename_category_button
+    return this.renameCategoryButton
   }
 
   public getEditCategoryButton() {
-    return this.edit_category_button
+    return this.editCategoryButton
   }
 
   public getDeleteCategoryButton() {
-    return this.delete_category_button
+    return this.deleteCategoryButton
   }
 
   private setup() {
-    this.category_section.getElement().appendChild(this.createCategory())
+    this.categorySection.getElement().appendChild(this.createCategory())
   }
 
   private createCategory() {
+    const element = document.createElement('div')
+    element.appendChild(this.createCategoryHeader())
+    if (this.channels.length != 0) {
+      element.appendChild(this.createCategoryChannels())
+    }
+    return element
+  }
+
+  private createCategoryHeader() {
     const element = document.createElement('div')
     element.classList.add('p-channel_sidebar__link')
     element.appendChild(this.createCategoryIcon())
@@ -61,7 +70,7 @@ export default class Category {
   private createCategoryNameLabel() {
     const element = document.createElement('span')
     element.classList.add('p-channel_sidebar__name')
-    element.textContent = this.category_name
+    element.textContent = this.categoryName
     return element
   }
 
@@ -69,7 +78,7 @@ export default class Category {
     const element = document.createElement('i')
     element.classList.add('material-icons', 'rename_category_button')
     element.textContent = 'edit'
-    this.rename_category_button = element
+    this.renameCategoryButton = element
     return element
   }
 
@@ -77,7 +86,7 @@ export default class Category {
     const element = document.createElement('i')
     element.classList.add('material-icons', 'edit_category_button')
     element.textContent = 'playlist_add'
-    this.edit_category_button = element
+    this.editCategoryButton = element
     return element
   }
 
@@ -85,7 +94,30 @@ export default class Category {
     const element = document.createElement('i')
     element.classList.add('material-icons', 'delete_category_button')
     element.textContent = 'delete_outline'
-    this.delete_category_button = element
+    this.deleteCategoryButton = element
+    return element
+  }
+
+  private createCategoryChannels() {
+    const element = document.createElement('div')
+    element.classList.add('category_channels')
+    element.appendChild(this.createStepShadow())
+    this.channels.forEach((channel) => {
+      element.appendChild(channel.element)
+    })
+    element.appendChild(this.createLightRelection())
+    return element
+  }
+
+  private createStepShadow() {
+    const element = document.createElement('div')
+    element.classList.add('step_shadow')
+    return element
+  }
+
+  private createLightRelection() {
+    const element = document.createElement('div')
+    element.classList.add('light_reflection')
     return element
   }
 }
