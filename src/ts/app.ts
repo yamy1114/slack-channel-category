@@ -1,4 +1,3 @@
-import Logger from './logger'
 import Storage from './storage'
 import SidebarController from './sidebar_controller'
 

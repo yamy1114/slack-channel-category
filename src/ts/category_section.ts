@@ -1,4 +1,3 @@
-import Logger from './logger'
 import * as Constant from './constant'
 
 export default class CategorySection {

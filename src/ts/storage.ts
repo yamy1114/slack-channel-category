@@ -1,5 +1,3 @@
-import Logger from './logger'
-
 export default class Storage {
   private STORAGE_KEY
 
@@ -11,17 +9,11 @@ export default class Storage {
   public load(callback) {
     chrome.storage.sync.get(this.STORAGE_KEY, (items) => {
       const data = items[this.STORAGE_KEY]
-      Logger.debug('load data from storage')
-      Logger.debug(data)
-
       callback(data)
     })
   }
 
   public save(data) {
-    Logger.debug('save data to storage')
-    Logger.debug(data)
-
     const saveData = {}
     saveData[this.STORAGE_KEY] = data
     chrome.storage.sync.set(saveData)
