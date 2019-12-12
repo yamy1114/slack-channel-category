@@ -20,10 +20,6 @@ export default class CategorySection {
 
   private setup() {
     const before_element = this.fetchSecondPresentation()
-
-    const blank = this.createBlank()
-    this.root_element.insertBefore(blank, before_element.nextSibling)
-
     const category_section = this.createCategorySection()
     this.root_element.insertBefore(category_section, before_element.nextSibling)
   }
@@ -76,12 +72,6 @@ export default class CategorySection {
     const element = document.createElement('button')
     element.classList.add('p-channel_sidebar__section_heading_plus', 'c-button-unstyled')
     this.add_category_button = element
-    return element
-  }
-
-  private createBlank() {
-    const element = document.createElement('div')
-    element.classList.add('after_category_blank', Constant.CATEGORY_COMPONENT_CLASS)
     return element
   }
 }

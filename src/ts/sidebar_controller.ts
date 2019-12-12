@@ -1,4 +1,3 @@
-import Logger from './logger'
 import CategorySection from './category_section'
 import Category from './category'
 import * as Constant from './constant'
@@ -192,13 +191,10 @@ export default class SidebarController {
 
   private registerForceStopSidebarScrollEvent(element, channelName) {
     element.onmousedown = () => {
-      Logger.debug('mousedown')
       if (element.getElementsByClassName('p-channel_sidebar__channel--selected')[0] != null) {
-        Logger.debug('selected')
         return
       }
 
-      console.log(this.scrollArea)
       this.scrollOffset = this.scrollArea.scrollTop
       this.scrollArea.classList.remove('c-scrollbar__hider')
       this.scrollArea.style.marginTop = '-' + this.scrollOffset + 'px'
@@ -218,12 +214,10 @@ export default class SidebarController {
       const target = element.getElementsByClassName('p-channel_sidebar__channel')[0]
       const monitor = new MutationObserver(() => {
         setTimeout(() => {
-          Logger.debug('scroll ok')
           this.scrollArea.classList.add('c-scrollbar__hider')
           this.scrollArea.style.marginTop = 0
           this.scrollArea.scrollTop = this.scrollOffset
           setTimeout(() => {
-            Logger.debug('assist off')
             this.isWheelAssist = false
             this.scrollArea.onscroll = null
           }, 2000)
