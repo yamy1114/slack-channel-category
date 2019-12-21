@@ -9,24 +9,30 @@ export default class SidebarController {
   private categories
   // Array<String, Element>
   private channels
-  private originalSiderbarChildren
   private scrollArea
   private isWheelAssist
   private scrollOffset
+  private isRecomposing = true
 
   constructor(storage) {
     this.storage = storage
     this.rootElement = this.fetchRootElement()
     this.scrollArea= this.fetchScrollArea()
-    this.originalSiderbarChildren = Array.from(this.rootElement.children)
-    this.channels = this.composeChannels()
-    this.setup()
+    this.registerChannelListObserver()
+
+    this.storage.load((categoriesData) => {
+      this.setup(categoriesData)
+      requestIdleCallback(() => {
+        this.isRecomposing = false
+      })
+    })
   }
 
-  private setup() {
+  private setup(categoriesData) {
     this.categorySection = new CategorySection(this.rootElement)
     this.registerAddCategoryButtonEvent(this.categorySection.getAddCategoryButton())
-    this.createCategories()
+    this.channels = this.composeChannels()
+    this.createCategories(categoriesData)
   }
 
   private fetchRootElement() {
@@ -37,10 +43,25 @@ export default class SidebarController {
     return document.getElementsByClassName('c-scrollbar__hider')[0]
   }
 
+  private registerChannelListObserver() {
+    const observer = new MutationObserver(() => {
+      if (this.isRecomposing == false) {
+        this.storage.load((categoriesData) => {
+          this.recomposeSidebar(categoriesData)
+        })
+      }
+    })
+    observer.observe(this.rootElement, { childList: true })
+  }
+
   private composeChannels() {
     const channels = []
     Array.from(this.rootElement.children).forEach((element: Element) => {
       if (element.getElementsByClassName('p-channel_sidebar__channel')[0] == null) {
+        return
+      }
+      element.classList.remove('channel_in_category')
+      if (element.querySelector('a[aria-label*=draft]') != null) {
         return
       }
       const channelName = element.getElementsByClassName('p-channel_sidebar__name')[0].textContent
@@ -53,38 +74,87 @@ export default class SidebarController {
     return channels
   }
 
-  private createCategories() {
+  private createCategories(categoriesData) {
     this.categories = {}
-    this.storage.load((categoriesData) => {
-      const sortedCategoryNames = Object.keys(categoriesData).sort()
-      for(const categoryName of sortedCategoryNames) {
-        const channels = this.channels.filter((channel) => {
-         for(const channelName of categoriesData[categoryName]) {
-           const channelRegex = new RegExp('^' + channelName.replace(/[\\^$.+?()[\]{}|]/g, '\\$&').replace(/\*/g, '.*') + '$')
-            if (channel.name.match(channelRegex)) {
-              return true
-            }
+    const sortedCategoryNames = Object.keys(categoriesData).sort()
+    for(const categoryName of sortedCategoryNames) {
+      const channels = this.channels.filter((channel) => {
+        for(const channelName of categoriesData[categoryName]) {
+         const channelRegex = new RegExp('^' + channelName.replace(/[\\^$.+?()[\]{}|]/g, '\\$&').replace(/\*/g, '.*') + '$')
+          if (channel.name.match(channelRegex)) {
+            return true
           }
-          return false
-        })
-        const category = new Category(this.rootElement, categoryName, channels, this.categorySection)
-        this.registerRenameCategoryButtonEvent(category.getRenameCategoryButton(), categoryName)
-        this.registerEditCategoryButtonEvent(category.getEditCategoryButton(), categoryName)
-        this.registerDeleteCategoryButtonEvent(category.getDeleteCategoryButton(), categoryName)
-        this.categories[categoryName] = category
-      }
-    })
+        }
+        return false
+      })
+      const category = new Category(this.rootElement, categoryName, channels, this.categorySection)
+      this.registerRenameCategoryButtonEvent(category.getRenameCategoryButton(), categoryName)
+      this.registerEditCategoryButtonEvent(category.getEditCategoryButton(), categoryName)
+      this.registerDeleteCategoryButtonEvent(category.getDeleteCategoryButton(), categoryName)
+      this.categories[categoryName] = category
+    }
   }
 
   private recomposeSidebar(categoriesData) {
+    this.isRecomposing = true
+
     const categoryComponents = document.getElementsByClassName(Constant.CATEGORY_COMPONENT_CLASS)
     Array.from(categoryComponents).forEach(categoryComponent => {
       this.rootElement.removeChild(categoryComponent)
     })
-    this.originalSiderbarChildren.forEach((element) => {
-      this.rootElement.appendChild(element)
+
+    this.resetChannelPosition()
+    this.setup(categoriesData)
+
+    requestIdleCallback(() => {
+      this.isRecomposing = false
     })
-    this.setup()
+  }
+
+  private resetChannelPosition() {
+    const starredChannels = this.getListItems('a[aria-label*=channel][data-qa-channel-sidebar-is-starred=true]')
+    const starredSharedChannels = this.getListItems('a[aria-label*=shared][data-qa-channel-sidebar-is-starred=true]')
+    const starredDirectMessages = this.getListItems('a[aria-label*=direct][data-qa-channel-sidebar-is-starred=true]')
+    const notStarredChannels = this.getListItems('a[aria-label*=channel][data-qa-channel-sidebar-is-starred=false]')
+    const notStarredSharedChannels = this.getListItems('a[aria-label*=shared][data-qa-channel-sidebar-is-starred=false]')
+    const notStarredDirectMessages = this.getListItems('a[aria-label*=direct][data-qa-channel-sidebar-is-starred=false]')
+
+    const starredSection = this.rootElement.querySelector('div[data-qa=starred]').parentElement
+    const sharedChannelsSection = this.rootElement.querySelector('div[data-qa=shared_channels]').parentElement
+    const channelsSection = this.rootElement.querySelector('div[data-qa=channels]').parentElement
+    const directMessagesSection = this.rootElement.querySelector('div[data-qa=ims]').parentElement
+    //    this.assignChannels(starredSection.nextSibling, starredChannels.concat(starredSharedChannels).concat(starredDirectMessages))
+    //this.assignChannels(channelsSection.nextSibling, notStarredChannels)
+    //this.assignChannels(sharedChannelsSection.nextSibling, notStarredSharedChannels)
+    this.assignChannels(directMessagesSection.nextSibling, notStarredDirectMessages)
+
+    if (this.rootElement.querySelector('div[data-qa=drafts]') != null) {
+      const draftChannelsAndMessages = this.getListItems('a[aria-label*=draft]')
+      const draftSection = this.rootElement.querySelector('div[data-qa=drafts]').parentElement
+      this.assignChannels(draftSection.nextSibling, draftChannelsAndMessages)
+    }
+  }
+
+  private assignChannels(insertPosition, channels) {
+    Array.from(channels).forEach((channel: Element) => {
+      this.rootElement.insertBefore(channel, insertPosition)
+    })
+  }
+
+  private getListItems(query) {
+    const elements = this.rootElement.querySelectorAll(query)
+    const sortedElements = Array.from(elements).sort((a: Element, b: Element) => {
+      return a.textContent < b.textContent ? -1 : 1
+    })
+    const parentElements = Array.from(sortedElements).map((element: Element) => {
+      const parentElement = element.parentElement
+      if (parentElement.getAttribute('role') == 'listitem') {
+        return parentElement
+      } else {
+        return parentElement.parentElement
+      }
+    })
+    return parentElements
   }
 
   private registerAddCategoryButtonEvent(button) {

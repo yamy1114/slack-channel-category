@@ -35,15 +35,17 @@ export default class Category {
   }
 
   private setup() {
-    this.categorySection.getElement().appendChild(this.createCategory())
+    this.rootElement.insertBefore(this.createCategory(), this.categorySection.getBottomBlank())
+    if (this.channels.length != 0) {
+      this.rellocateCategoryChannels()
+    }
   }
 
   private createCategory() {
     const element = document.createElement('div')
+    element.classList.add(Constant.CATEGORY_COMPONENT_CLASS)
     element.appendChild(this.createCategoryHeader())
-    if (this.channels.length != 0) {
-      element.appendChild(this.createCategoryChannels())
-    }
+    this.element = element
     return element
   }
 
@@ -55,7 +57,6 @@ export default class Category {
     element.appendChild(this.createRenameCategoryButton())
     element.appendChild(this.createEditCategoryButton())
     element.appendChild(this.createDeleteCategoryButton())
-    this.element = element
     return element
   }
 
@@ -97,25 +98,26 @@ export default class Category {
     return element
   }
 
-  private createCategoryChannels() {
-    const element = document.createElement('div')
-    element.classList.add('category_channels')
-    element.appendChild(this.createStepShadow())
+  private rellocateCategoryChannels() {
+    const insertPosition = this.element.nextSibling
+    this.rootElement.insertBefore(this.createStepShadow(), insertPosition)
     this.channels.forEach((channel) => {
-      element.appendChild(channel.element)
+      channel.element.classList.add('channel_in_category')
+      this.rootElement.insertBefore(channel.element, insertPosition)
     })
-    element.appendChild(this.createLightRelection())
-    return element
-  }
+    this.rootElement.insertBefore(this.createLightRelection(), insertPosition)
+ }
 
   private createStepShadow() {
     const element = document.createElement('div')
+    element.classList.add(Constant.CATEGORY_COMPONENT_CLASS)
     element.classList.add('step_shadow')
     return element
   }
 
   private createLightRelection() {
     const element = document.createElement('div')
+    element.classList.add(Constant.CATEGORY_COMPONENT_CLASS)
     element.classList.add('light_reflection')
     return element
   }

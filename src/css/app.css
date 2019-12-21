@@ -1,19 +1,19 @@
-.category_section {
-  margin-bottom: 10px
-}
-
-.category_channels {
+.channel_in_category {
   background-color: rgba(0, 0, 0, 0.3);
 }
 
+.section_bottom_blank {
+  height: 12px;
+}
+
 .step_shadow {
-  height: 2px;
-  background-color: rgba(0, 0, 0, 0.2);
+  height: 1px;
+  background-color: rgba(0, 0, 0, 0.4);
 }
 
 .light_reflection {
-  height: 2px;
-  background-color: rgba(255, 255, 255, 0.1);
+  height: 1px;
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 .rename_category_button {

@@ -1,12 +1,14 @@
+import Logger from './logger'
 import * as Constant from './constant'
 
 export default class CategorySection {
   private element
-  private root_element
-  private add_category_button
+  private rootElement
+  private addCategoryButton
+  private bottomBlank
 
-  constructor(root_element) {
-    this.root_element = root_element
+  constructor(rootElement) {
+    this.rootElement = rootElement
     this.setup()
   }
 
@@ -15,26 +17,42 @@ export default class CategorySection {
   }
 
   public getAddCategoryButton() {
-    return this.add_category_button
+    return this.addCategoryButton
+  }
+
+  public getBottomBlank() {
+    return this.bottomBlank
   }
 
   private setup() {
-    const before_element = this.fetchSecondPresentation()
-    const category_section = this.createCategorySection()
-    this.root_element.insertBefore(category_section, before_element.nextSibling)
+    const insertPosition = this.fetchElementForInsertCategorySection().nextSibling
+    this.rootElement.insertBefore(this.createCategorySection(), insertPosition)
+    this.rootElement.insertBefore(this.createBottomBlank(), insertPosition)
   }
 
-  private fetchSecondPresentation() {
-    const elements = this.root_element.children
-    const length = this.root_element.childElementCount
+  private fetchElementForInsertCategorySection() {
+    const elements = this.rootElement.children
+    const length = this.rootElement.childElementCount
+
     let count = 0
+    const targetCount = this.fetchTargetPresentationCount()
+
+    Logger.debug(targetCount)
     for (let i = 0; i < length; i++) {
       if (elements[i].getAttribute('role') == 'presentation') {
         count++
       }
-      if (count == 2) {
+      if (count == targetCount) {
         return elements[i]
       }
+    }
+  }
+
+  private fetchTargetPresentationCount() {
+    if (this.rootElement.querySelector('div[data-qa=drafts]') != null) {
+      return 3
+    } else {
+      return 2
     }
   }
 
@@ -71,7 +89,15 @@ export default class CategorySection {
   private createAddCategoryButton() {
     const element = document.createElement('button')
     element.classList.add('p-channel_sidebar__section_heading_plus', 'c-button-unstyled')
-    this.add_category_button = element
+    this.addCategoryButton = element
+    return element
+  }
+
+  private createBottomBlank() {
+    const element = document.createElement('div')
+    element.classList.add(Constant.CATEGORY_COMPONENT_CLASS)
+    element.classList.add('section_bottom_blank')
+    this.bottomBlank = element
     return element
   }
 }
