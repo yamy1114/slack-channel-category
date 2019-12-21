@@ -1,19 +1,16 @@
 import Logger from './logger'
 import Storage from './storage'
 import * as Constant from './constant'
+import Base from './base'
 
-export default class CategorySection {
-  private element
+export default class CategorySection extends Base {
   private sidebar
   private bottomBlank
 
   constructor(sidebar) {
+    super()
     this.sidebar = sidebar
     this.setup()
-  }
-
-  public getElement() {
-    return this.element
   }
 
   public getBottomBlank() {

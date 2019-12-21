@@ -1,23 +1,20 @@
 import Storage from './storage'
 import * as Constant from './constant'
+import Base from './base'
 
-export default class Category {
-  private element
+export default class Category extends Base {
   private sidebar
   private categorySection
   private categoryName
   private channels
 
   constructor(sidebar, categoryName, channels, categorySection) {
+    super()
     this.sidebar = sidebar
     this.categoryName = categoryName
     this.channels = channels
     this.categorySection = categorySection
     this.setup()
-  }
-
-  public getElement() {
-    return this.element
   }
 
   private setup() {

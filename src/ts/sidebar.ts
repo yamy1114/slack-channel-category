@@ -3,12 +3,11 @@ import CategorySection from './category_section'
 import Category from './category'
 import * as Constant from './constant'
 import Logger from './logger'
+import Base from './base'
 
-export default class Sidebar {
-  private element
+export default class Sidebar extends Base {
   private that
   private categorySection
-  private categories
   private channels
   private scrollArea
   private isWheelAssist
@@ -16,6 +15,7 @@ export default class Sidebar {
   private isRecomposing
 
   constructor() {
+    super()
     this.that = this
     this.element = document.getElementsByClassName('p-channel_sidebar__static_list')[0]
     this.scrollArea= this.fetchScrollArea()
@@ -71,10 +71,11 @@ export default class Sidebar {
     const sharedChannelsSection = this.element.querySelector('div[data-qa=shared_channels]').parentElement
     const channelsSection = this.element.querySelector('div[data-qa=channels]').parentElement
     const directMessagesSection = this.element.querySelector('div[data-qa=ims]').parentElement
+
     this.assignChannels(starredSection.nextSibling, starredChannels.concat(starredSharedChannels).concat(starredDirectMessages))
-    //    this.assignChannels(channelsSection.nextSibling, notStarredChannels)
-    //this.assignChannels(sharedChannelsSection.nextSibling, notStarredSharedChannels)
-    //this.assignChannels(directMessagesSection.nextSibling, notStarredDirectMessages)
+    this.assignChannels(channelsSection.nextSibling, notStarredChannels)
+    this.assignChannels(sharedChannelsSection.nextSibling, notStarredSharedChannels)
+    this.assignChannels(directMessagesSection.nextSibling, notStarredDirectMessages)
 
     if (this.element.querySelector('div[data-qa=drafts]') != null) {
       const draftChannelsAndMessages = this.getListItems('a[aria-label*=draft]')
@@ -84,9 +85,7 @@ export default class Sidebar {
   }
 
   private assignChannels(insertPosition, channels) {
-    Logger.debug('hoge')
     Array.from(channels).forEach((channel: Element) => {
-      Logger.debug(channel.textContent)
       this.element.insertBefore(channel, insertPosition)
     })
   }
@@ -108,7 +107,6 @@ export default class Sidebar {
   }
 
   private createCategories(categoriesData) {
-    this.categories = {}
     const sortedCategoryNames = Object.keys(categoriesData).sort()
     for(const categoryName of sortedCategoryNames) {
       const channels = this.channels.filter((channel) => {
@@ -119,13 +117,8 @@ export default class Sidebar {
         }
         return false
       })
-      const category = new Category(this.that, categoryName, channels, this.categorySection)
-      this.categories[categoryName] = category
+      new Category(this.that, categoryName, channels, this.categorySection)
     }
-  }
-
-  public getElement() {
-    return this.element
   }
 
   private fetchScrollArea() {
