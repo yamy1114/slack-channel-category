@@ -3,8 +3,8 @@ import CategorySection from './category_section'
 import Category from './category'
 import * as Constant from './constant'
 
-export default class SidebarController {
-  private rootElement
+export default class Sidebar {
+  private element
   private categorySection
   private categories
   private channels
@@ -14,7 +14,7 @@ export default class SidebarController {
   private isRecomposing
 
   constructor() {
-    this.rootElement = this.fetchRootElement()
+    this.element = document.getElementsByClassName('p-channel_sidebar__static_list')[0]
     this.scrollArea= this.fetchScrollArea()
     this.registerChannelListObserver()
     this.enableRecomposing()
@@ -28,14 +28,13 @@ export default class SidebarController {
   }
 
   private createCategoryComponents(categoriesData) {
-    this.categorySection = new CategorySection(this.rootElement)
-    this.registerAddCategoryButtonEvent(this.categorySection.getAddCategoryButton())
+    this.categorySection = new CategorySection(self)
     this.channels = this.composeChannels()
     this.createCategories(categoriesData)
   }
 
-  private fetchRootElement() {
-    return document.getElementsByClassName('p-channel_sidebar__static_list')[0]
+  private getElement() {
+    return this.element
   }
 
   private fetchScrollArea() {
@@ -46,16 +45,16 @@ export default class SidebarController {
     const observer = new MutationObserver(() => {
       if (this.isRecomposing == false) {
         Storage.load((categoriesData) => {
-          this.recomposeSidebar(categoriesData)
+          this.recompose(categoriesData)
         })
       }
     })
-    observer.observe(this.rootElement, { childList: true })
+    observer.observe(this.element, { childList: true })
   }
 
   private composeChannels() {
     const channels = []
-    Array.from(this.rootElement.children).forEach((element: Element) => {
+    Array.from(this.element.children).forEach((element: Element) => {
       if (element.getElementsByClassName('p-channel_sidebar__channel')[0] == null) {
         return
       }
@@ -86,20 +85,17 @@ export default class SidebarController {
         }
         return false
       })
-      const category = new Category(this.rootElement, categoryName, channels, this.categorySection)
-      this.registerRenameCategoryButtonEvent(category.getRenameCategoryButton(), categoryName)
-      this.registerEditCategoryButtonEvent(category.getEditCategoryButton(), categoryName)
-      this.registerDeleteCategoryButtonEvent(category.getDeleteCategoryButton(), categoryName)
+      const category = new Category(this.element, categoryName, channels, this.categorySection)
       this.categories[categoryName] = category
     }
   }
 
-  private recomposeSidebar(categoriesData) {
+  private recompose(categoriesData) {
     this.isRecomposing = true
 
     const categoryComponents = document.getElementsByClassName(Constant.CATEGORY_COMPONENT_CLASS)
     Array.from(categoryComponents).forEach(categoryComponent => {
-      this.rootElement.removeChild(categoryComponent)
+      this.element.removeChild(categoryComponent)
     })
 
     this.resetChannelPosition()
@@ -118,30 +114,30 @@ export default class SidebarController {
     const notStarredSharedChannels = this.getListItems('a[aria-label*=shared][data-qa-channel-sidebar-is-starred=false]')
     const notStarredDirectMessages = this.getListItems('a[aria-label*=direct][data-qa-channel-sidebar-is-starred=false]')
 
-    const starredSection = this.rootElement.querySelector('div[data-qa=starred]').parentElement
-    const sharedChannelsSection = this.rootElement.querySelector('div[data-qa=shared_channels]').parentElement
-    const channelsSection = this.rootElement.querySelector('div[data-qa=channels]').parentElement
-    const directMessagesSection = this.rootElement.querySelector('div[data-qa=ims]').parentElement
+    const starredSection = this.element.querySelector('div[data-qa=starred]').parentElement
+    const sharedChannelsSection = this.element.querySelector('div[data-qa=shared_channels]').parentElement
+    const channelsSection = this.element.querySelector('div[data-qa=channels]').parentElement
+    const directMessagesSection = this.element.querySelector('div[data-qa=ims]').parentElement
     //    this.assignChannels(starredSection.nextSibling, starredChannels.concat(starredSharedChannels).concat(starredDirectMessages))
     //this.assignChannels(channelsSection.nextSibling, notStarredChannels)
     //this.assignChannels(sharedChannelsSection.nextSibling, notStarredSharedChannels)
     this.assignChannels(directMessagesSection.nextSibling, notStarredDirectMessages)
 
-    if (this.rootElement.querySelector('div[data-qa=drafts]') != null) {
+    if (this.element.querySelector('div[data-qa=drafts]') != null) {
       const draftChannelsAndMessages = this.getListItems('a[aria-label*=draft]')
-      const draftSection = this.rootElement.querySelector('div[data-qa=drafts]').parentElement
+      const draftSection = this.element.querySelector('div[data-qa=drafts]').parentElement
       this.assignChannels(draftSection.nextSibling, draftChannelsAndMessages)
     }
   }
 
   private assignChannels(insertPosition, channels) {
     Array.from(channels).forEach((channel: Element) => {
-      this.rootElement.insertBefore(channel, insertPosition)
+      this.element.insertBefore(channel, insertPosition)
     })
   }
 
   private getListItems(query) {
-    const elements = this.rootElement.querySelectorAll(query)
+    const elements = this.element.querySelectorAll(query)
     const sortedElements = Array.from(elements).sort((a: Element, b: Element) => {
       return a.textContent < b.textContent ? -1 : 1
     })
@@ -154,104 +150,6 @@ export default class SidebarController {
       }
     })
     return parentElements
-  }
-
-  private registerAddCategoryButtonEvent(button) {
-    button.onclick = async () => {
-      const newCategoryName = window.prompt(
-        "Input new category name.\n" +
-        "Category name should be composed by more than 1 following characters.\n" +
-        "Available characters: [a-z][A-Z][0-9]_- ,./",
-        '')
-      if (newCategoryName == null) {
-        return
-      }
-      if (newCategoryName == '' || !newCategoryName.match(/^[\w\-\ \/,\.]*$/)) {
-        window.alert('Category name validation error!')
-        return
-      }
-      const categoriesData = await Storage.loadAsync()
-      if (categoriesData[newCategoryName] == undefined) {
-        categoriesData[newCategoryName] = []
-        Storage.save(categoriesData)
-        this.recomposeSidebar(categoriesData)
-      } else {
-        window.alert("'" + newCategoryName  + "' is already used!")
-      }
-    }
-  }
-
-  private registerRenameCategoryButtonEvent(button, oldCategoryName) {
-    button.onclick = async () => {
-      const newCategoryName = window.prompt(
-        "Input new category name.\n" +
-        "Category name should be composed by more than 1 following characters.\n" +
-        "Available characters: [a-z][A-Z][0-9]_- ,./", oldCategoryName)
-      if (newCategoryName == null) {
-        return
-      }
-      if (newCategoryName == '' || !newCategoryName.match(/^[\w\-\ \/,\.]*$/)) {
-        window.alert("Category name validation error!")
-        return
-      }
-      const categoriesData = await Storage.loadAsync()
-      if (categoriesData[newCategoryName] == undefined) {
-        categoriesData[newCategoryName] = categoriesData[oldCategoryName]
-        delete categoriesData[oldCategoryName]
-        Storage.save(categoriesData)
-        this.recomposeSidebar(categoriesData)
-      } else {
-        window.alert("'" + newCategoryName + "' is already used!")
-      }
-    }
-  }
-
-  private registerEditCategoryButtonEvent(button, categoryName) {
-    button.onclick = async () => {
-      const categoriesData: any = await Storage.loadAsync()
-      const currentChannels = categoriesData[categoryName]
-      const newChannelNamesText = window.prompt(
-        "Input channel names separated by '&'.\n" +
-        "You can use '*' as wildcard.",
-        currentChannels.join('&'),
-      )
-      if (newChannelNamesText == null) {
-        return
-      }
-      let newChannelNames = newChannelNamesText.split('&')
-      if (newChannelNames.filter(channelName => channelName.match(/^[\w\-\ ,\.\*]*$/)).length != newChannelNames.length) {
-        window.alert('Parsing channel names is failed!')
-      }
-      // delete duplicate channel name in newChannelNames
-      newChannelNames = newChannelNames.filter((channelName, index, self) => {
-        return self.indexOf(channelName) == index
-      })
-      // delete duplicate channel name in other categories
-      newChannelNames.forEach((channelName: String) => {
-        for(const categoryName in categoriesData) {
-          const channels = categoriesData[categoryName]
-          const index = channels.indexOf(channelName)
-          if (index != -1) {
-            categoriesData[categoryName] = channels.splice(index, 1)
-          }
-        }
-      })
-      categoriesData[categoryName] = newChannelNames
-      Storage.save(categoriesData)
-      this.recomposeSidebar(categoriesData)
-    }
-  }
-
-  private registerDeleteCategoryButtonEvent(button, categoryName) {
-    button.onclick = async () => {
-      if (!window.confirm('Do you delete category "' + categoryName + '"?')) {
-        return
-      }
-      const categoriesData = await Storage.loadAsync()
-      delete categoriesData[categoryName]
-      Storage.save(categoriesData)
-      this.recomposeSidebar(categoriesData)
-    }
   }
 
   private registerForceStopSidebarScrollEvent(element, channelName) {

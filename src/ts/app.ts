@@ -1,5 +1,5 @@
 import Storage from './storage'
-import SidebarController from './sidebar_controller'
+import Sidebar from './sidebar'
 
 import '../css/app.css'
 import '../css/google_material_icon.css'
@@ -14,7 +14,7 @@ const main = () => {
 const startProcess = () => {
   const workspaceName = fetchWorkspaceName()
   Storage.initialize(workspaceName)
-  new SidebarController()
+  new Sidebar()
 }
 
 const fetchWorkspaceName = () => document.getElementsByClassName('p-classic_nav__team_header__team__name')[0].textContent

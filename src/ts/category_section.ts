@@ -1,22 +1,18 @@
+import Storage from './storage'
 import * as Constant from './constant'
 
 export default class CategorySection {
   private element
-  private rootElement
-  private addCategoryButton
+  private sidebar
   private bottomBlank
 
-  constructor(rootElement) {
-    this.rootElement = rootElement
+  constructor(sidebar) {
+    this.sidebar = sidebar
     this.setup()
   }
 
   public getElement() {
     return this.element
-  }
-
-  public getAddCategoryButton() {
-    return this.addCategoryButton
   }
 
   public getBottomBlank() {
@@ -25,13 +21,13 @@ export default class CategorySection {
 
   private setup() {
     const insertPosition = this.fetchElementForInsertCategorySection().nextSibling
-    this.rootElement.insertBefore(this.createCategorySection(), insertPosition)
-    this.rootElement.insertBefore(this.createBottomBlank(), insertPosition)
+    this.sidebar.getElement().insertBefore(this.createCategorySection(), insertPosition)
+    this.sidebar.getElement().insertBefore(this.createBottomBlank(), insertPosition)
   }
 
   private fetchElementForInsertCategorySection() {
-    const elements = this.rootElement.children
-    const length = this.rootElement.childElementCount
+    const elements = this.sidebar.getElement().children
+    const length = this.sidebar.getElement().childElementCount
 
     let count = 0
     const targetCount = this.fetchTargetPresentationCount()
@@ -47,7 +43,7 @@ export default class CategorySection {
   }
 
   private fetchTargetPresentationCount() {
-    if (this.rootElement.querySelector('div[data-qa=drafts]') != null) {
+    if (this.sidebar.getElement().querySelector('div[data-qa=drafts]') != null) {
       return 3
     } else {
       return 2
@@ -87,8 +83,31 @@ export default class CategorySection {
   private createAddCategoryButton() {
     const element = document.createElement('button')
     element.classList.add('p-channel_sidebar__section_heading_plus', 'c-button-unstyled')
-    this.addCategoryButton = element
+    element.onclick = this.addCategory
     return element
+  }
+
+  private async addCategory() {
+    const newCategoryName = window.prompt(
+      "Input new category name.\n" +
+      "Category name should be composed by more than 1 following characters.\n" +
+      "Available characters: [a-z][A-Z][0-9]_- ,./",
+      '')
+    if (newCategoryName == null) {
+      return
+    }
+    if (newCategoryName == '' || !newCategoryName.match(/^[\w\-\ \/,\.]*$/)) {
+      window.alert('Category name validation error!')
+      return
+    }
+    const categoriesData = await Storage.loadAsync()
+    if (categoriesData[newCategoryName] == undefined) {
+      categoriesData[newCategoryName] = []
+      Storage.save(categoriesData)
+      this.sidebar.recompose(categoriesData)
+    } else {
+      window.alert("'" + newCategoryName  + "' is already used!")
+    }
   }
 
   private createBottomBlank() {
