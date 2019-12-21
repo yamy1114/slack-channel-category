@@ -21,7 +21,7 @@ export default class Category {
   }
 
   private setup() {
-    this.sidebar.insertBefore(this.createCategory(), this.categorySection.getBottomBlank())
+    this.sidebar.getElement().insertBefore(this.createCategory(), this.categorySection.getBottomBlank())
     if (this.channels.length != 0) {
       this.rellocateCategoryChannels()
     }
@@ -64,101 +64,95 @@ export default class Category {
     const element = document.createElement('i')
     element.classList.add('material-icons', 'rename_category_button')
     element.textContent = 'edit'
-    element.onclick = this.renameCategory
+    element.onclick = async () => {
+      const newCategoryName = window.prompt(
+        "Input new category name.\n" +
+        "Category name should be composed by more than 1 following characters.\n" +
+        "Available characters: [a-z][A-Z][0-9]_- ,./", this.categoryName)
+      if (newCategoryName == null) {
+        return
+      }
+      if (newCategoryName == '' || !newCategoryName.match(/^[\w\-\ \/,\.]*$/)) {
+        window.alert("Category name validation error!")
+        return
+      }
+      const categoriesData = await Storage.loadAsync()
+      if (categoriesData[newCategoryName] == undefined) {
+        categoriesData[newCategoryName] = categoriesData[this.categoryName]
+        delete categoriesData[this.categoryName]
+        Storage.save(categoriesData)
+        this.sidebar.recompose(categoriesData)
+      } else {
+        window.alert("'" + newCategoryName + "' is already used!")
+      }
+    }
     return element
-  }
-
-  private async renameCategory() {
-    const newCategoryName = window.prompt(
-      "Input new category name.\n" +
-      "Category name should be composed by more than 1 following characters.\n" +
-      "Available characters: [a-z][A-Z][0-9]_- ,./", this.categoryName)
-    if (newCategoryName == null) {
-      return
-    }
-    if (newCategoryName == '' || !newCategoryName.match(/^[\w\-\ \/,\.]*$/)) {
-      window.alert("Category name validation error!")
-      return
-    }
-    const categoriesData = await Storage.loadAsync()
-    if (categoriesData[newCategoryName] == undefined) {
-      categoriesData[newCategoryName] = categoriesData[this.categoryName]
-      delete categoriesData[this.categoryName]
-      Storage.save(categoriesData)
-      this.sidebar.recompose(categoriesData)
-    } else {
-      window.alert("'" + newCategoryName + "' is already used!")
-    }
   }
 
   private createEditCategoryButton() {
     const element = document.createElement('i')
     element.classList.add('material-icons', 'edit_category_button')
     element.textContent = 'playlist_add'
-    element.onclick = this.editCategory
-    return element
-  }
-
-  private async editCategory() {
-    const categoriesData: any = await Storage.loadAsync()
-    const currentChannels = categoriesData[this.categoryName]
-    const newChannelNamesText = window.prompt(
-      "Input channel names separated by '&'.\n" +
-      "You can use '*' as wildcard.",
-      currentChannels.join('&'),
-    )
-    if (newChannelNamesText == null) {
-      return
-    }
-    let newChannelNames = newChannelNamesText.split('&')
-    if (newChannelNames.filter(channelName => channelName.match(/^[\w\-\ ,\.\*]*$/)).length     != newChannelNames.length) {
-      window.alert('Parsing channel names is failed!')
-    }
-    // delete duplicate channel name in newChannelNames
-    newChannelNames = newChannelNames.filter((channelName, index, self) => {
-      return self.indexOf(channelName) == index
-    })
-    // delete duplicate channel name in other categories
-    newChannelNames.forEach((channelName: String) => {
-      for(const categoryName in categoriesData) {
-        const channels = categoriesData[categoryName]
-        const index = channels.indexOf(channelName)
-        if (index != -1) {
-          categoriesData[categoryName] = channels.splice(index, 1)
-        }
+    element.onclick = async () => {
+      const categoriesData: any = await Storage.loadAsync()
+      const currentChannels = categoriesData[this.categoryName]
+      const newChannelNamesText = window.prompt(
+        "Input channel names separated by '&'.\n" +
+        "You can use '*' as wildcard.",
+        currentChannels.join('&'),
+      )
+      if (newChannelNamesText == null) {
+        return
       }
-    })
-    categoriesData[this.categoryName] = newChannelNames
-    Storage.save(categoriesData)
-    this.sidebar.recompose(categoriesData)
+      let newChannelNames = newChannelNamesText.split('&')
+      if (newChannelNames.filter(channelName => channelName.match(/^[\w\-\ ,\.\*]*$/)).length     != newChannelNames.length) {
+        window.alert('Parsing channel names is failed!')
+      }
+      // delete duplicate channel name in newChannelNames
+      newChannelNames = newChannelNames.filter((channelName, index, self) => {
+        return self.indexOf(channelName) == index
+      })
+      // delete duplicate channel name in other categories
+      newChannelNames.forEach((channelName: String) => {
+        for(const categoryName in categoriesData) {
+          const channels = categoriesData[categoryName]
+          const index = channels.indexOf(channelName)
+          if (index != -1) {
+            categoriesData[categoryName] = channels.splice(index, 1)
+          }
+        }
+      })
+      categoriesData[this.categoryName] = newChannelNames
+      Storage.save(categoriesData)
+      this.sidebar.recompose(categoriesData)
+    }
+    return element
   }
 
   private createDeleteCategoryButton() {
     const element = document.createElement('i')
     element.classList.add('material-icons', 'delete_category_button')
     element.textContent = 'delete_outline'
-    element.onclick = this.deleteCategory
-    return element
-  }
-
-  private async deleteCategory() {
-    if (!window.confirm('Do you delete category "' + this.categoryName + '"?')) {
-      return
+    element.onclick = async () => {
+      if (!window.confirm('Do you delete category "' + this.categoryName + '"?')) {
+        return
+      }
+      const categoriesData = await Storage.loadAsync()
+      delete categoriesData[this.categoryName]
+      Storage.save(categoriesData)
+      this.sidebar.recompose(categoriesData)
     }
-    const categoriesData = await Storage.loadAsync()
-    delete categoriesData[this.categoryName]
-    Storage.save(categoriesData)
-    this.sidebar.recompose(categoriesData)
+    return element
   }
 
   private rellocateCategoryChannels() {
     const insertPosition = this.element.nextSibling
-    this.sidebar.insertBefore(this.createStepShadow(), insertPosition)
+    this.sidebar.getElement().insertBefore(this.createStepShadow(), insertPosition)
     this.channels.forEach((channel) => {
       channel.element.classList.add('channel_in_category')
-      this.sidebar.insertBefore(channel.element, insertPosition)
+      this.sidebar.getElement().insertBefore(channel.element, insertPosition)
     })
-    this.sidebar.insertBefore(this.createLightRelection(), insertPosition)
+    this.sidebar.getElement().insertBefore(this.createLightRelection(), insertPosition)
  }
 
   private createStepShadow() {

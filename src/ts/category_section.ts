@@ -1,3 +1,4 @@
+import Logger from './logger'
 import Storage from './storage'
 import * as Constant from './constant'
 
@@ -83,31 +84,29 @@ export default class CategorySection {
   private createAddCategoryButton() {
     const element = document.createElement('button')
     element.classList.add('p-channel_sidebar__section_heading_plus', 'c-button-unstyled')
-    element.onclick = this.addCategory
+    element.onclick = async () => {
+      const newCategoryName = window.prompt(
+        "Input new category name.\n" +
+        "Category name should be composed by more than 1 following characters.\n" +
+        "Available characters: [a-z][A-Z][0-9]_- ,./",
+        '')
+      if (newCategoryName == null) {
+        return
+      }
+      if (newCategoryName == '' || !newCategoryName.match(/^[\w\-\ \/,\.]*$/)) {
+        window.alert('Category name validation error!')
+        return
+      }
+      const categoriesData = await Storage.loadAsync()
+      if (categoriesData[newCategoryName] == undefined) {
+        categoriesData[newCategoryName] = []
+        Storage.save(categoriesData)
+        this.sidebar.recompose(categoriesData)
+      } else {
+        window.alert("'" + newCategoryName  + "' is already used!")
+      }
+    }
     return element
-  }
-
-  private async addCategory() {
-    const newCategoryName = window.prompt(
-      "Input new category name.\n" +
-      "Category name should be composed by more than 1 following characters.\n" +
-      "Available characters: [a-z][A-Z][0-9]_- ,./",
-      '')
-    if (newCategoryName == null) {
-      return
-    }
-    if (newCategoryName == '' || !newCategoryName.match(/^[\w\-\ \/,\.]*$/)) {
-      window.alert('Category name validation error!')
-      return
-    }
-    const categoriesData = await Storage.loadAsync()
-    if (categoriesData[newCategoryName] == undefined) {
-      categoriesData[newCategoryName] = []
-      Storage.save(categoriesData)
-      this.sidebar.recompose(categoriesData)
-    } else {
-      window.alert("'" + newCategoryName  + "' is already used!")
-    }
   }
 
   private createBottomBlank() {

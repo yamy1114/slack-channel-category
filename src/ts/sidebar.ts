@@ -2,9 +2,11 @@ import Storage from './storage'
 import CategorySection from './category_section'
 import Category from './category'
 import * as Constant from './constant'
+import Logger from './logger'
 
 export default class Sidebar {
   private element
+  private that
   private categorySection
   private categories
   private channels
@@ -14,6 +16,7 @@ export default class Sidebar {
   private isRecomposing
 
   constructor() {
+    this.that = this
     this.element = document.getElementsByClassName('p-channel_sidebar__static_list')[0]
     this.scrollArea= this.fetchScrollArea()
     this.registerChannelListObserver()
@@ -23,17 +26,105 @@ export default class Sidebar {
 
   private async setup() {
     const categoriesData = await Storage.loadAsync()
-    this.createCategoryComponents(categoriesData)
+    this.recompose(categoriesData)
+  }
+
+  public recompose(categoriesData) {
+    this.enableRecomposing()
+
+    this.removeCategoryComponents()
+    this.resetChannelPosition()
+
+    this.categorySection = new CategorySection(this.that)
+    this.channels = this.composeChannels()
+    this.createCategories(categoriesData)
+
     this.disableRecomposing()
   }
 
-  private createCategoryComponents(categoriesData) {
-    this.categorySection = new CategorySection(self)
-    this.channels = this.composeChannels()
-    this.createCategories(categoriesData)
+  private enableRecomposing() {
+    this.isRecomposing = true
   }
 
-  private getElement() {
+  private disableRecomposing() {
+    requestIdleCallback(() => {
+      this.isRecomposing = false
+    })
+  }
+
+  private removeCategoryComponents() {
+    const categoryComponents = this.element.getElementsByClassName(Constant.CATEGORY_COMPONENT_CLASS)
+    Array.from(categoryComponents).forEach(categoryComponent => {
+      this.element.removeChild(categoryComponent)
+    })
+  }
+
+  private resetChannelPosition() {
+    const starredChannels = this.getListItems('a[aria-label*=channel][data-qa-channel-sidebar-is-starred=true]')
+    const starredSharedChannels = this.getListItems('a[aria-label*=shared][data-qa-channel-sidebar-is-starred=true]')
+    const starredDirectMessages = this.getListItems('a[aria-label*=direct][data-qa-channel-sidebar-is-starred=true]')
+    const notStarredChannels = this.getListItems('a[aria-label*=channel][data-qa-channel-sidebar-is-starred=false]')
+    const notStarredSharedChannels = this.getListItems('a[aria-label*=shared][data-qa-channel-sidebar-is-starred=false]')
+    const notStarredDirectMessages = this.getListItems('a[aria-label*=direct][data-qa-channel-sidebar-is-starred=false]')
+
+    const starredSection = this.element.querySelector('div[data-qa=starred]').parentElement
+    const sharedChannelsSection = this.element.querySelector('div[data-qa=shared_channels]').parentElement
+    const channelsSection = this.element.querySelector('div[data-qa=channels]').parentElement
+    const directMessagesSection = this.element.querySelector('div[data-qa=ims]').parentElement
+    this.assignChannels(starredSection.nextSibling, starredChannels.concat(starredSharedChannels).concat(starredDirectMessages))
+    //    this.assignChannels(channelsSection.nextSibling, notStarredChannels)
+    //this.assignChannels(sharedChannelsSection.nextSibling, notStarredSharedChannels)
+    //this.assignChannels(directMessagesSection.nextSibling, notStarredDirectMessages)
+
+    if (this.element.querySelector('div[data-qa=drafts]') != null) {
+      const draftChannelsAndMessages = this.getListItems('a[aria-label*=draft]')
+      const draftSection = this.element.querySelector('div[data-qa=drafts]').parentElement
+      this.assignChannels(draftSection.nextSibling, draftChannelsAndMessages)
+    }
+  }
+
+  private assignChannels(insertPosition, channels) {
+    Logger.debug('hoge')
+    Array.from(channels).forEach((channel: Element) => {
+      Logger.debug(channel.textContent)
+      this.element.insertBefore(channel, insertPosition)
+    })
+  }
+
+  private getListItems(query) {
+    const elements = this.element.querySelectorAll(query)
+    const sortedElements = Array.from(elements).sort((a: Element, b: Element) => {
+      return a.textContent < b.textContent ? -1 : 1
+    })
+    const parentElements = Array.from(sortedElements).map((element: Element) => {
+      const parentElement = element.parentElement
+      if (parentElement.getAttribute('role') == 'listitem') {
+        return parentElement
+      } else {
+        return parentElement.parentElement
+      }
+    })
+    return parentElements
+  }
+
+  private createCategories(categoriesData) {
+    this.categories = {}
+    const sortedCategoryNames = Object.keys(categoriesData).sort()
+    for(const categoryName of sortedCategoryNames) {
+      const channels = this.channels.filter((channel) => {
+        for(const channelName of categoriesData[categoryName]) {
+         const channelRegex = new RegExp('^' + channelName.replace(/[\\^$.+?()[\]{}|]/g, '\\$&').replace(/\*/g, '.*') + '$')
+          if (channel.name.match(channelRegex)) { return true
+          }
+        }
+        return false
+      })
+      const category = new Category(this.that, categoryName, channels, this.categorySection)
+      this.categories[categoryName] = category
+    }
+  }
+
+  public getElement() {
     return this.element
   }
 
@@ -70,86 +161,6 @@ export default class Sidebar {
       this.registerForceStopSidebarScrollEvent(element, channelName)
     })
     return channels
-  }
-
-  private createCategories(categoriesData) {
-    this.categories = {}
-    const sortedCategoryNames = Object.keys(categoriesData).sort()
-    for(const categoryName of sortedCategoryNames) {
-      const channels = this.channels.filter((channel) => {
-        for(const channelName of categoriesData[categoryName]) {
-         const channelRegex = new RegExp('^' + channelName.replace(/[\\^$.+?()[\]{}|]/g, '\\$&').replace(/\*/g, '.*') + '$')
-          if (channel.name.match(channelRegex)) {
-            return true
-          }
-        }
-        return false
-      })
-      const category = new Category(this.element, categoryName, channels, this.categorySection)
-      this.categories[categoryName] = category
-    }
-  }
-
-  private recompose(categoriesData) {
-    this.isRecomposing = true
-
-    const categoryComponents = document.getElementsByClassName(Constant.CATEGORY_COMPONENT_CLASS)
-    Array.from(categoryComponents).forEach(categoryComponent => {
-      this.element.removeChild(categoryComponent)
-    })
-
-    this.resetChannelPosition()
-    this.createCategoryComponents(categoriesData)
-
-    requestIdleCallback(() => {
-      this.isRecomposing = false
-    })
-  }
-
-  private resetChannelPosition() {
-    const starredChannels = this.getListItems('a[aria-label*=channel][data-qa-channel-sidebar-is-starred=true]')
-    const starredSharedChannels = this.getListItems('a[aria-label*=shared][data-qa-channel-sidebar-is-starred=true]')
-    const starredDirectMessages = this.getListItems('a[aria-label*=direct][data-qa-channel-sidebar-is-starred=true]')
-    const notStarredChannels = this.getListItems('a[aria-label*=channel][data-qa-channel-sidebar-is-starred=false]')
-    const notStarredSharedChannels = this.getListItems('a[aria-label*=shared][data-qa-channel-sidebar-is-starred=false]')
-    const notStarredDirectMessages = this.getListItems('a[aria-label*=direct][data-qa-channel-sidebar-is-starred=false]')
-
-    const starredSection = this.element.querySelector('div[data-qa=starred]').parentElement
-    const sharedChannelsSection = this.element.querySelector('div[data-qa=shared_channels]').parentElement
-    const channelsSection = this.element.querySelector('div[data-qa=channels]').parentElement
-    const directMessagesSection = this.element.querySelector('div[data-qa=ims]').parentElement
-    //    this.assignChannels(starredSection.nextSibling, starredChannels.concat(starredSharedChannels).concat(starredDirectMessages))
-    //this.assignChannels(channelsSection.nextSibling, notStarredChannels)
-    //this.assignChannels(sharedChannelsSection.nextSibling, notStarredSharedChannels)
-    this.assignChannels(directMessagesSection.nextSibling, notStarredDirectMessages)
-
-    if (this.element.querySelector('div[data-qa=drafts]') != null) {
-      const draftChannelsAndMessages = this.getListItems('a[aria-label*=draft]')
-      const draftSection = this.element.querySelector('div[data-qa=drafts]').parentElement
-      this.assignChannels(draftSection.nextSibling, draftChannelsAndMessages)
-    }
-  }
-
-  private assignChannels(insertPosition, channels) {
-    Array.from(channels).forEach((channel: Element) => {
-      this.element.insertBefore(channel, insertPosition)
-    })
-  }
-
-  private getListItems(query) {
-    const elements = this.element.querySelectorAll(query)
-    const sortedElements = Array.from(elements).sort((a: Element, b: Element) => {
-      return a.textContent < b.textContent ? -1 : 1
-    })
-    const parentElements = Array.from(sortedElements).map((element: Element) => {
-      const parentElement = element.parentElement
-      if (parentElement.getAttribute('role') == 'listitem') {
-        return parentElement
-      } else {
-        return parentElement.parentElement
-      }
-    })
-    return parentElements
   }
 
   private registerForceStopSidebarScrollEvent(element, channelName) {
@@ -189,15 +200,5 @@ export default class Sidebar {
       })
       monitor.observe(target, { attributes: true, attributeFilter: ['class'] })
     }
-  }
-
-  private enableRecomposing() {
-    this.isRecomposing = true
-  }
-
-  private disableRecomposing() {
-    requestIdleCallback(() => {
-      this.isRecomposing = false
-    })
   }
 }
