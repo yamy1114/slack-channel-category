@@ -1,4 +1,3 @@
-import Logger from './logger'
 import * as Constant from './constant'
 
 export default class CategorySection {
@@ -37,7 +36,6 @@ export default class CategorySection {
     let count = 0
     const targetCount = this.fetchTargetPresentationCount()
 
-    Logger.debug(targetCount)
     for (let i = 0; i < length; i++) {
       if (elements[i].getAttribute('role') == 'presentation') {
         count++

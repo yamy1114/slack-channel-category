@@ -1,34 +1,33 @@
+import Storage from './storage'
 import CategorySection from './category_section'
 import Category from './category'
 import * as Constant from './constant'
 
 export default class SidebarController {
-  private storage
   private rootElement
   private categorySection
   private categories
-  // Array<String, Element>
   private channels
   private scrollArea
   private isWheelAssist
   private scrollOffset
-  private isRecomposing = true
+  private isRecomposing
 
-  constructor(storage) {
-    this.storage = storage
+  constructor() {
     this.rootElement = this.fetchRootElement()
     this.scrollArea= this.fetchScrollArea()
     this.registerChannelListObserver()
-
-    this.storage.load((categoriesData) => {
-      this.setup(categoriesData)
-      requestIdleCallback(() => {
-        this.isRecomposing = false
-      })
-    })
+    this.enableRecomposing()
+    this.setup()
   }
 
-  private setup(categoriesData) {
+  private async setup() {
+    const categoriesData = await Storage.loadAsync()
+    this.createCategoryComponents(categoriesData)
+    this.disableRecomposing()
+  }
+
+  private createCategoryComponents(categoriesData) {
     this.categorySection = new CategorySection(this.rootElement)
     this.registerAddCategoryButtonEvent(this.categorySection.getAddCategoryButton())
     this.channels = this.composeChannels()
@@ -46,7 +45,7 @@ export default class SidebarController {
   private registerChannelListObserver() {
     const observer = new MutationObserver(() => {
       if (this.isRecomposing == false) {
-        this.storage.load((categoriesData) => {
+        Storage.load((categoriesData) => {
           this.recomposeSidebar(categoriesData)
         })
       }
@@ -104,7 +103,7 @@ export default class SidebarController {
     })
 
     this.resetChannelPosition()
-    this.setup(categoriesData)
+    this.createCategoryComponents(categoriesData)
 
     requestIdleCallback(() => {
       this.isRecomposing = false
@@ -158,7 +157,7 @@ export default class SidebarController {
   }
 
   private registerAddCategoryButtonEvent(button) {
-    button.onclick = () => {
+    button.onclick = async () => {
       const newCategoryName = window.prompt(
         "Input new category name.\n" +
         "Category name should be composed by more than 1 following characters.\n" +
@@ -171,20 +170,19 @@ export default class SidebarController {
         window.alert('Category name validation error!')
         return
       }
-      this.storage.load((categoriesData) => {
-        if (categoriesData[newCategoryName] == undefined) {
-          categoriesData[newCategoryName] = []
-          this.storage.save(categoriesData)
-          this.recomposeSidebar(categoriesData)
-        } else {
-          window.alert("'" + newCategoryName  + "' is already used!")
-        }
-      })
+      const categoriesData = await Storage.loadAsync()
+      if (categoriesData[newCategoryName] == undefined) {
+        categoriesData[newCategoryName] = []
+        Storage.save(categoriesData)
+        this.recomposeSidebar(categoriesData)
+      } else {
+        window.alert("'" + newCategoryName  + "' is already used!")
+      }
     }
   }
 
   private registerRenameCategoryButtonEvent(button, oldCategoryName) {
-    button.onclick = () => {
+    button.onclick = async () => {
       const newCategoryName = window.prompt(
         "Input new category name.\n" +
         "Category name should be composed by more than 1 following characters.\n" +
@@ -196,66 +194,63 @@ export default class SidebarController {
         window.alert("Category name validation error!")
         return
       }
-      this.storage.load((categoriesData) => {
-        if (categoriesData[newCategoryName] == undefined) {
-          categoriesData[newCategoryName] = categoriesData[oldCategoryName]
-          delete categoriesData[oldCategoryName]
-          this.storage.save(categoriesData)
-          this.recomposeSidebar(categoriesData)
-        } else {
-          window.alert("'" + newCategoryName + "' is already used!")
-        }
-      })
+      const categoriesData = await Storage.loadAsync()
+      if (categoriesData[newCategoryName] == undefined) {
+        categoriesData[newCategoryName] = categoriesData[oldCategoryName]
+        delete categoriesData[oldCategoryName]
+        Storage.save(categoriesData)
+        this.recomposeSidebar(categoriesData)
+      } else {
+        window.alert("'" + newCategoryName + "' is already used!")
+      }
     }
   }
 
   private registerEditCategoryButtonEvent(button, categoryName) {
-    button.onclick = () => {
-      this.storage.load((categoriesData) => {
-        const currentChannels = categoriesData[categoryName]
-        const newChannelNamesText = window.prompt(
-          "Input channel names separated by '&'.\n" +
-          "You can use '*' as wildcard.",
-          currentChannels.join('&'),
-        )
-        if (newChannelNamesText == null) {
-          return
-        }
-        let newChannelNames = newChannelNamesText.split('&')
-        if (newChannelNames.filter(channelName => channelName.match(/^[\w\-\ ,\.\*]*$/)).length != newChannelNames.length) {
-          window.alert('Parsing channel names is failed!')
-        }
-        // delete duplicate channel name in newChannelNames
-        newChannelNames = newChannelNames.filter((channelName, index, self) => {
-          return self.indexOf(channelName) == index
-        })
-        // delete duplicate channel name in other categories
-        newChannelNames.forEach((channelName: String) => {
-          for(const categoryName in categoriesData) {
-            const channels = categoriesData[categoryName]
-            const index = channels.indexOf(channelName)
-            if (index != -1) {
-              categoriesData[categoryName] = channels.splice(index, 1)
-            }
-          }
-        })
-        categoriesData[categoryName] = newChannelNames
-        this.storage.save(categoriesData)
-        this.recomposeSidebar(categoriesData)
+    button.onclick = async () => {
+      const categoriesData: any = await Storage.loadAsync()
+      const currentChannels = categoriesData[categoryName]
+      const newChannelNamesText = window.prompt(
+        "Input channel names separated by '&'.\n" +
+        "You can use '*' as wildcard.",
+        currentChannels.join('&'),
+      )
+      if (newChannelNamesText == null) {
+        return
+      }
+      let newChannelNames = newChannelNamesText.split('&')
+      if (newChannelNames.filter(channelName => channelName.match(/^[\w\-\ ,\.\*]*$/)).length != newChannelNames.length) {
+        window.alert('Parsing channel names is failed!')
+      }
+      // delete duplicate channel name in newChannelNames
+      newChannelNames = newChannelNames.filter((channelName, index, self) => {
+        return self.indexOf(channelName) == index
       })
+      // delete duplicate channel name in other categories
+      newChannelNames.forEach((channelName: String) => {
+        for(const categoryName in categoriesData) {
+          const channels = categoriesData[categoryName]
+          const index = channels.indexOf(channelName)
+          if (index != -1) {
+            categoriesData[categoryName] = channels.splice(index, 1)
+          }
+        }
+      })
+      categoriesData[categoryName] = newChannelNames
+      Storage.save(categoriesData)
+      this.recomposeSidebar(categoriesData)
     }
   }
 
   private registerDeleteCategoryButtonEvent(button, categoryName) {
-    button.onclick = () => {
+    button.onclick = async () => {
       if (!window.confirm('Do you delete category "' + categoryName + '"?')) {
         return
       }
-      this.storage.load((categoriesData) => {
-        delete categoriesData[categoryName]
-        this.storage.save(categoriesData)
-        this.recomposeSidebar(categoriesData)
-      })
+      const categoriesData = await Storage.loadAsync()
+      delete categoriesData[categoryName]
+      Storage.save(categoriesData)
+      this.recomposeSidebar(categoriesData)
     }
   }
 
@@ -296,5 +291,15 @@ export default class SidebarController {
       })
       monitor.observe(target, { attributes: true, attributeFilter: ['class'] })
     }
+  }
+
+  private enableRecomposing() {
+    this.isRecomposing = true
+  }
+
+  private disableRecomposing() {
+    requestIdleCallback(() => {
+      this.isRecomposing = false
+    })
   }
 }

@@ -13,8 +13,8 @@ const main = () => {
 
 const startProcess = () => {
   const workspaceName = fetchWorkspaceName()
-  const storage = new Storage(workspaceName)
-  new SidebarController(storage)
+  Storage.initialize(workspaceName)
+  new SidebarController()
 }
 
 const fetchWorkspaceName = () => document.getElementsByClassName('p-classic_nav__team_header__team__name')[0].textContent
