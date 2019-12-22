@@ -73,7 +73,7 @@ export default class Category extends Base {
         window.alert("Category name validation error!")
         return
       }
-      const categoriesData = await Storage.loadAsync()
+      const categoriesData = await Storage.load()
       if (categoriesData[newCategoryName] == undefined) {
         categoriesData[newCategoryName] = categoriesData[this.categoryName]
         delete categoriesData[this.categoryName]
@@ -91,7 +91,7 @@ export default class Category extends Base {
     element.classList.add('material-icons', 'edit_category_button')
     element.textContent = 'playlist_add'
     element.onclick = async () => {
-      const categoriesData: any = await Storage.loadAsync()
+      const categoriesData: any = await Storage.load()
       const currentChannels = categoriesData[this.categoryName]
       const newChannelNamesText = window.prompt(
         "Input channel names separated by '&'.\n" +
@@ -134,7 +134,7 @@ export default class Category extends Base {
       if (!window.confirm('Do you delete category "' + this.categoryName + '"?')) {
         return
       }
-      const categoriesData = await Storage.loadAsync()
+      const categoriesData = await Storage.load()
       delete categoriesData[this.categoryName]
       Storage.save(categoriesData)
       this.sidebar.recompose(categoriesData)

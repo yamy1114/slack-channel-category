@@ -94,7 +94,7 @@ export default class CategorySection extends Base {
         window.alert('Category name validation error!')
         return
       }
-      const categoriesData = await Storage.loadAsync()
+      const categoriesData = await Storage.load()
       if (categoriesData[newCategoryName] == undefined) {
         categoriesData[newCategoryName] = []
         Storage.save(categoriesData)

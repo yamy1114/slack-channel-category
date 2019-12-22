@@ -1,4 +1,4 @@
-export default class Sidebar {
+export default class Base {
   protected element
 
   public getElement() {
